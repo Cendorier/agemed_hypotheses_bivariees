@@ -1,0 +1,291 @@
+---
+title       : Relationships between median age et diverse variables in Africa
+subtitle    : Human Developpement Report 2020
+author      : Louis Thidet
+job         : Director of socio-economical studies
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+widgets     : [mathjax, quiz, bootstrap, interactive] # {mathjax, quiz, bootstrap}
+ext_widgets : {rCharts: [libraries/nvd3, libraries/leaflet, libraries/dygraphs]}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+logo        : onu.png
+biglogo     : onu.png
+assets      : {assets: ../../assets}
+css: "style.css"
+---
+
+<style type="text/css">
+body {background:grey transparent;
+}
+</style>
+
+```{r setup, include=FALSE, echo=FALSE, warning = FALSE, message = FALSE}
+# This file is made with the help of the package slidify and his libraries from the package slidifyLibraries.
+
+# default parameters of chunks
+knitr::opts_chunk$set(echo = FALSE,     
+                      warning = FALSE,  
+                      message = FALSE,  
+                      fig.width = 6,    
+                      fig.height= 4)    
+
+# loading of packages
+library(knitr)
+library(dplyr)
+
+library(ggplot2)
+library(plotly)
+library(gridExtra)
+
+library(xtable)
+options(xtable.comment = FALSE)
+
+# loading of datas
+don<-read.table(file = "data/africa_don.csv",
+                header = TRUE,
+                sep =";",
+                dec = ".",
+                encoding = "UTF-8"
+                 )
+
+### recoding the variable of region
+don$subregion<-as.factor(don$subregion)
+
+###  creating a binary variable
+don$POP2 <- cut(don$POP,breaks = c(0,25,1000))
+levels(don$POP2)<-c("Small","Big")
+
+### dataframe
+CODE<-don$iso3
+NOM<-don$name
+W<-don$POP
+Y<-don$AGEMED
+X<-don$PIB
+B<-don$POP2
+Q<-don$subregion
+don<-data.frame(CODE,NOM,W,B,Q, X, Y)
+
+
+nameY = "Median age" 
+nameX =  "GDP per capita (in US $ 2017)" 
+nameW = "Total population (millions)"  
+nameB = "Country size (2 groups)"
+nameQ = "UN regional divisions"
+source =" Human Development Report, 2020"
+
+```
+
+## Introduction
+
+• This document is about the variable Y of median age and aims to analyze for the 48 countries of Africa the relationship between this variable and other characteristics : the demographic size, the geographic situation and the wealth.
+
+• The works it contains are based on the Human Developpement Report of United Nations of the year 2020, which is based on datas recorded in 2018 or 2019 (it varies), so, on datas from before the COVID19 pandemic.
+
+• It aims to verify three hypothesis :
+- H1 : Is there a relationship between median age and GDP per capita?
+- H2 : Is there a relationship between median age and the fact that a country is big or small? 
+- H3 : Is there a relationship between median age and the localisation of a country at the scale of Africa?
+
+--- .class1 #id1 bg:url(assets/img/background.png)
+
+## Details of hypothesis variables
+
+• **H1**: median age and GDP per capita (We choose to measure the wealth of countries relatively to their GPD per capita)
+
+• **H2**: median age and size of country (The country is defined big or small relatively to a line of 25 millions inhabitants)
+
+• **H3**: median age and African regions defined by United Nations:
+- Western Africa
+- Eastern Africa
+- Middle Africa
+- Northern Africa
+- Southern Africa
+
+--- .class1 #id1 bg:url(assets/img/background.png)
+
+## Median age distribution
+
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk00e}
+
+plot1 <- don %>%
+  ggplot() +
+  aes(x =Y) + 
+  geom_histogram(     
+                 fill="gold2",
+                 col="black" 
+                 ) +   
+ scale_x_continuous( name = nameY) + 
+ scale_y_continuous(name = "number of countries")+
+ggtitle("Median age per country in Africa in 2020") + theme(
+      axis.text=element_text(size=12),
+    axis.title=element_text(size=14),
+      plot.title=element_text(size=17),
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+
+plot2 <- don %>%
+  ggplot() +
+    aes(x =Y) + 
+geom_boxplot( fill = "dodgerblue1",col="black",outlier.colour="black", outlier.shape=16,
+             outlier.size=2, notch=FALSE) + 
+   scale_x_continuous(name = nameY) +  theme(
+         axis.text=element_text(size=12),
+    axis.title=element_text(size=14),
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+```
+
+<div class='left' style='float:left;width:45%'>
+ <p class="black"> • The median age of African countries is a variable with an unimodal distribution which isn't gaussian.
+ <br>
+ <br>
+  • The distribution is marked by some extreme values beyond the fourth quartile.
+  <br>
+ <br>
+ • In Africa, the country with the lowest median age has a median age of 15, while the country with the highest median age has a median age of 30; and the median of median ages of African countries is 19.
+
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk01e}
+grid.arrange(plot1, plot2)
+```
+</div>
+
+
+--- .class1 #id1 bg:url(assets/img/background.png)
+
+## H1 : Regression plot of median age (Y) with GDP per capita (X): Y = f(X)
+
+<div class='left' style='float:left;width:50%'>
+ <p class="black">
+ We can clearly see via the regression line Y = f(X) a positive correlation between median age and GDP per capita. Although the correlation is not perfect, there is clearly a general link between median age and GDP per capita; the higher the latter, the higher the median age.
+</p>
+</div>
+  <div class='right' style='float:right;width:45%'>
+ <p class="black">
+ 
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk02e}
+ggplot(don) +
+  aes(x = X) +
+  aes(y = Y) +
+  geom_point(aes(size = 10)) +
+  scale_x_log10(name=nameX)+
+  scale_y_log10(name=nameY)+
+  geom_smooth(method="lm") +
+  ggtitle(label = "Relationship between median age and GDP per capita in Africa") + theme(
+    axis.text=element_text(size=17),
+    axis.title=element_text(size=17),
+    plot.title=element_text(size=18),
+    legend.text=element_text(size=0),
+    legend.title=element_text(size=0),
+    legend.position="none",
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+```
+</p>
+</div>
+
+---
+
+## H1 : Significance of the hypothesis
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk03e}
+model1<-lm(Y~X)
+tab1<-xtable(model1)
+print(tab1, type="html")
+```
+
+ <p width="60%"> ![](assets/img/ttest.png) </p>
+
+We see that the P-value of the Student's t test between the variables of median age and GDP per capita is **3.726e-09**, which is much lower than 0.05. The null hypothesis is therefore rejected: the relationship between median age and GDP per capita cannot be considered to be the effect of chance. 
+
+
+--- .class1 #id1 bg:url(assets/img/background.png)
+
+## H2 : Boxplot comparison of median age for small and large countries: Y = f(B)
+
+<div class='left' style='float:left;width:45%'>
+ <p class="black"> We can see from the two boxplots there, one representing small countries and the other large countries, that the median ages of small countries vary more than those of large countries, but that the median of the median ages of large countries is slightly higher.
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk04e}
+boxplot(don$Y~don$B, col=c('#B3E5FC', '#CE93D8'), xlab=nameB, ylab = nameY, cex.lab=1.2, cex.axis=1, horizontal=T, cex=1.5, border = c("cyan4", "cyan4"))
+```
+</div>
+
+---
+
+## H2 : Significance of the hypothesis
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk05e}
+model2<-lm(Y~B,data=don)
+tab2<-xtable(model2)
+print(tab2, type="html")
+```
+<br>
+On constate que la P value des variables de H2 est de **0.5983**, ce qui est largement supérieur à 0,05. Par conséquent, l'hypothèse nulle est validée, et on ne saurait statuer que les résultats de la présente analyse ne sont pas l'effet du hasard.
+
+--- .class1 #id1 bg:url(assets/img/background.png)
+
+## H3 : Boxplot comparison of median age by African region: Y = f(Q)
+
+<div class='left' style='float:left;width:50%'>
+ <p class="black"> The graph shows that the median age of countries is higher in some regions of Africa than in others. Where the median of median ages of countries is similar between the three regions of West Africa, Central Africa and East Africa, at around 18, it is much higher in South Africa, where it is close to 25, and even higher in North Africa, where it is close to 30. We will test the significance of these results in the next slide.
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk06e}
+boxplot(don$Y~don$Q, 
+      col=c("aquamarine", "cadetblue1", "coral1", "darkolivegreen1", "azure", "antiquewhite"),
+       xlab=nameQ,
+       ylab=nameY,
+      main= "", cex.lab=1.2, cex.axis=0.75, cex=1.5, border = c("cyan4", "cyan4", "cyan4", "cyan4", "cyan4"))
+```
+</div>
+
+---
+
+## H3 : Significance of the hypothesis
+
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk07e}
+model3<-lm(Y~Q,data = don)
+tab3<-xtable(model3)
+print(tab3,type="html")
+```
+#### Example: There is a highly insignificant (P-value: 0.8872 > 0.05) difference in median age of -0.1589 between East and Central Africa.
+<br>
+There is very strong significance in the differences in median age between East African and North African countries, and in the differences in median age between East African and South African countries. Hypothesis H3 is therefore validated. There is indeed a link between the location of a country on the African scale and its median age.
+
+--- .class1 #id1 bg:url(assets/img/background1.png)
+
+## Conclusion 
+
+• H1 is a <span style="color:green">valid</span> hypothesis.
+
+• H2 is an <span style="color:red">invalid</span> hypothesis.
+
+• H3 is a <span style="color:green">valid</span> hypothesis.
+
+---
+
+## To go further
+
+For an extended analysis of the demography of countries, it is possible to combine the variables of median age and GDP per capita with other variables. The Human Development Report contains many useful data on this subject, such as the infant mortality rate or the adolescent birth rate.
+
+ <p width="60%"> ![](assets/img/onu.png) </p>

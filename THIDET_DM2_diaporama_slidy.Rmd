@@ -1,0 +1,252 @@
+---
+title: "Relation entre âge médian et diverses variables en Afrique"
+author: "Louis THIDET"
+date: '2022-04-15'
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE, echo=FALSE, warning = FALSE, message = FALSE}
+# Ce fichier est fait à l'aide du package slidify et de ses bibliothèques du package slidifyLibraries.
+
+# réglages par défaut des chunks
+knitr::opts_chunk$set(echo = FALSE,     # Ne pas afficher le code R
+                      warning = FALSE,  # Ne pas afficher les alertes
+                      message = FALSE,  # Ne pas afficher les messages
+                      fig.width = 6,    # Largeur des figures en pouces
+                      fig.height= 4)    # Hauteur des figures en pouces
+
+# chargement des packages
+library(knitr)
+library(dplyr)
+
+library(ggplot2)
+library(plotly)
+library(gridExtra)
+
+library(xtable)
+options(xtable.comment = FALSE)
+
+# Chargement des données
+don<-read.table(file = "data/africa_don.csv",
+                header = TRUE,
+                sep =";",
+                dec = ".",
+                encoding = "UTF-8"
+                 )
+
+### Recodage de la  variables catégorielles "région"
+don$subregion<-as.factor(don$subregion)
+
+###  Création d'une variable catégorielle binaire
+don$POP2 <- cut(don$POP,breaks = c(0,25,1000))
+levels(don$POP2)<-c("Petit","Grand")
+
+### Tableau de travail
+CODE<-don$iso3
+NOM<-don$name
+W<-don$POP
+Y<-don$AGEMED
+X<-don$PIB
+B<-don$POP2
+Q<-don$subregion
+don<-data.frame(CODE,NOM,W,B,Q, X, Y)
+
+nameY = "Âge médian" 
+nameX =  "PIB par hab (en $ américains 2017)" 
+nameW = "Population totale (millions)"  
+nameB = "Taille de pays (2 groupes)"
+nameQ = "Divisions régionales des Nations unies"
+source =" Rapport Mondial sur le Développement Humain, 2020"
+
+```
+
+## Introduction
+
+• Ce document questionne la variable Y de l'âge médian et vise à analyser pour les 48 pays du continent africain le rapport entretenu par cette variable avec d'autres caractéristiques : la taille démographique, la situation géographique et la richesse.
+
+• Les travaux qu'il comporte sont appuyés sur le Rapport Mondial sur le Développement Humain des Nations unies de l'année 2020. Ils sont basés sur des données de 2018 ou de 2019 (cela dépend des pays), et se basent donc sur une photographie du monde d'avant la pandémie de COVID19.
+
+• Il cherche à vérifier les trois hypothèses suivantes :\
+- H1 : Y a-t-il une relation entre âge médian et PIB par habitant ?\
+- H2 : Y a-t-il une relation entre âge médian et le fait qu'un pays soit grand ou petit ?\
+- H3 : Y a-t-il une relation entre l'âge médian et la localisation d'un pays à l'échelle de l'Afrique ?\
+
+
+
+## Détail des variables des hypothèses
+
+• **H1** : âge médian et PIB par habitant (On a choisi de mesurer la richesse des pays en fonction de leur PIB par habitant)
+
+• **H2** : âge médian et taille du pays (Le pays est défini grand ou petit en fonction d'un seuil de 25 millions d'habitants)
+
+• **H3** : âge médian et région d'Afrique définie par les Nations unies :\
+- Afrique de l'Ouest\
+- Afrique de l'Est\
+- Afrique centrale\
+- Afrique du Nord\
+- Afrique du Sud\
+
+## Distribution de l'âge médian
+
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk00}
+
+plot1 <- don %>%
+  ggplot() +
+  aes(x =Y) + 
+  geom_histogram(     
+                 fill="gold2",
+                 col="black" 
+                 ) +   
+ scale_x_continuous( name = nameY) + 
+ scale_y_continuous(name = "Nombre de pays")+
+ggtitle("L'âge médian par pays en Afrique en 2020") + theme(
+      axis.text=element_text(size=12),
+    axis.title=element_text(size=14),
+      plot.title=element_text(size=17),
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+
+plot2 <- don %>%
+  ggplot() +
+    aes(x =Y) + 
+geom_boxplot( fill = "dodgerblue1",col="black",outlier.colour="black", outlier.shape=16,
+             outlier.size=2, notch=FALSE) + 
+   scale_x_continuous(name = nameY) +  theme(
+         axis.text=element_text(size=12),
+    axis.title=element_text(size=14),
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+```
+
+<div class='left' style='float:left;width:45%'>
+ <p class="black"> • L'âge médian des pays d'Afrique est une variable à la distribution unimodale mais non gaussienne.
+ <br>
+ <br>
+  • La distribution est marquée par quelques valeurs extrêmes au-delà du quatrième quartile.
+  <br>
+ <br>
+ • En Afrique, le pays à l'âge médian le plus faible a un âge médian de 15, tandis que le pays à l'âge médian le plus élevé a un âge médian de 30 ; et la médiane des âges médians des pays africains est de 19.
+
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk01}
+grid.arrange(plot1, plot2)
+```
+</div>
+
+## H1 : Graphique de régression de l'âge médian (Y) avec le PIB par habitant (X) : Y = f(X)
+
+<div class='left' style='float:left;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk02}
+ggplot(don) +
+  aes(x = X) +
+  aes(y = Y) +
+  geom_point(aes(size = 10)) +
+  scale_x_log10(name=nameX)+
+  scale_y_log10(name=nameY)+
+  geom_smooth(method="lm") +
+  ggtitle(label = "Relation entre âge médian et PIB par habitant en Afrique") + theme(
+    axis.text=element_text(size=17),
+    axis.title=element_text(size=17),
+    plot.title=element_text(size=18),
+    legend.text=element_text(size=0),
+    legend.title=element_text(size=0),
+    legend.position="none",
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+```
+</div>
+  <div class='right' style='float:right;width:45%'>
+ <p class="black">
+ On observe clairement via la droite de régression Y = f(X) une corrélation positive entre l'âge médian et le PIB par habitants. Bien que la corrélation ne soit pas parfaite, il y a d'évidence, de manière générale, un lien entre âge médian et PIB par habitant ; plus ce dernier est élevé, et plus l'âge médian l'est aussi.
+</p>
+</div>
+
+## H1 : Significativité de l'hypothèse
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk03}
+model1<-lm(Y~X)
+tab1<-xtable(model1)
+print(tab1, type="html")
+```
+
+ <p width="60%"> ![](assets/img/ttest.png) </p>
+
+On constate que la valeur P du test de Student effectué entre les variables de l'âge médian et du PIB par habitant est de **3.726e-09**, ce qui est très nettement inférieur à 0,05. L'hypothèse nulle est par conséquent rejetée : on ne saurait considérer que la relation entre âge médian et PIB par habitant est l'effet du hasard.
+
+## H2 : Comparaison par les boites à moustache de l'âge médian des petits et grands pays : Y = f(B)
+
+<div class='left' style='float:left;width:45%'>
+ <p class="black"> On voit sur les deux boites à moustache ci-contre, l'une représentant les petits pays, et l'autre les grands pays, que les âges médians des petits pays varient plus que ceux des grands pays, mais que la médiane des âges médians des grands pays est légèrement plus élevée.
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk04}
+boxplot(don$Y~don$B, col=c('#B3E5FC', '#CE93D8'), xlab=nameB, ylab = nameY, cex.lab=1.2, cex.axis=1, horizontal=T, cex=1.5, border = c("cyan4", "cyan4"))
+```
+</div>
+
+## H2 : Significativité de l'hypothèse
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk05}
+model2<-lm(Y~B,data=don)
+tab2<-xtable(model2)
+print(tab2, type="html")
+```
+<br>
+On constate que la P value des variables de H2 est de **0.5983**, ce qui est largement supérieur à 0,05. Par conséquent, l'hypothèse nulle est validée, et on ne saurait statuer que les résultats de la présente analyse ne sont pas l'effet du hasard.
+
+## H3 : Comparaison par les boites à moustache de l'âge médian selon les régions africaines : Y = f(Q)
+
+<div class='left' style='float:left;width:50%'>
+ <p class="black"> On constate d'après le graphique que l'âge médian des pays est plus élevé dans certaines régions d'Afrique que d'autres. Là où la médiane des âges médians des pays est similaire entre les trois régions de l'Afrique de l'ouest, de l'Afrique centrale et de l'Afrique de l'est, autour de 18, elle est bien plus élevée en Afrique du sud, puisqu'elle s'y approche de 25, et encore plus élevée en Afrique du nord, puisqu'elle s'approche là-bas de 30. On va tester la significativité de ces résultats dans une diapositive suivante.
+</p>
+</div>
+  <div class='right' style='float:right;width:50%'>
+```{r echo = FALSE, warning = FALSE, message = FALSE, chunk06}
+boxplot(don$Y~don$Q, 
+      col=c("aquamarine", "cadetblue1", "coral1", "darkolivegreen1", "azure", "antiquewhite"),
+       xlab=nameQ,
+       ylab=nameY,
+      main= "", cex.lab=1.2, cex.axis=0.75, cex=1.5, border = c("cyan4", "cyan4", "cyan4", "cyan4", "cyan4"))
+```
+</div>
+
+## H3 : Significativité de l'hypothèse
+
+```{r,results="asis", echo = FALSE, warning = FALSE, message = FALSE, chunk07}
+model3<-lm(Y~Q,data = don)
+tab3<-xtable(model3)
+print(tab3,type="html")
+```
+#### Lecture : Il y a une différence d'âge médian très peu significative (Valeur P : 0,8872 > 0,05) de -0.1589 entre l'Afrique de l'Est et l'Afrique centrale.
+<br>
+Il y a une très forte significativité dans les différences d'âge médian entre les pays d'Afrique de l'Est et les pays d'Afrique du Nord, et dans les différences d'âge médian entre les pays d'Afrique de l'Est et les pays d'Afrique du Sud. L'hypothèse H3 est donc validée. Il y a bien un lien entre la localisation d'un pays à l'échelle de l'Afrique, et son âge médian.
+
+## Conclusion 
+
+• H1 est une hypothèse <span style="color:green">vraie</span>.
+
+• H2 est une hypothèse <span style="color:red">fausse</span>.
+
+• H3 est une hypothèse <span style="color:green">vraie</span>.
+
+## Pour aller plus loin
+
+Pour une analyse prolongée de la démographie des pays, il est possible d'associer les variables de l'âge médian et du PIB par habitant avec d'autres variables. Le Rapport Mondial sur le Développement Humain contient de nombreuses données utiles à ce sujet, comme par exemple le taux de mortalité infantile ou le taux de natalité chez les adolescentes.
+
+ <p width="60%"> ![](assets/img/onu.png) </p>
