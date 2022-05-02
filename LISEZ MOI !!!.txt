@@ -1,4 +1,0 @@
-Les deux diaporamas du projet sont THIDET_DM2_diaporama et THIDET_DM2_diaporama_english. Mais pour une raison que l'on ne saurait expliquer,
-les rendus HTML ne s'affichent pas lorsqu'ils sont situés en dehors du dossier (c'est en tout cas lié au package slidify dont on a fait usage
-pour les créer). C'est la raison pour laquelle nous avons, au cas où, fait des diaporamas plus classiques, également au format slidy. On peut les 
-lancer partout, mais ils sont en revanche beaucoup moins beaux. Il s'agit de THIDET_DM2_diaporama_slidy et THIDET_DM2_diaporama_english_slidy.
