@@ -239,7 +239,7 @@ tab2<-xtable(model2)
 print(tab2, type="html")
 ```
 <br>
-On constate que la P value des variables de H2 est de **0.5983**, ce qui est largement supérieur à 0,05. Par conséquent, l'hypothèse nulle est validée, et on ne saurait statuer que les résultats de la présente analyse ne sont pas l'effet du hasard.
+We can see that the P-value of the variables of H2 is **0.5983**, which is largely superior to 0.05. Consequently, the null hypothesis is validated, and we can't say that the results of the analysis aren't the effect of randomness.
 
 --- .class1 #id1 bg:url(assets/img/background.png)
 
